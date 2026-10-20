@@ -1,0 +1,50 @@
+/* Define CSS variable for watermark height and refined retro-modern palette */
+/* @tweakable Primary accent color used across the UI */
+:root {
+    /* @tweakable The height of the watermark logo in the video player. */
+    --watermark-height: 72px;
+
+    /* @tweakable The width of the chat panel when expanded. */
+    --chat-expanded-width: 320px;
+    /* @tweakable The width of the chat panel when minimized. */
+    --chat-minimized-width: 64px;
+
+    /* @tweakable Width of the comments/aside column on video page (px or percentage) */
+    --video-comments-width: 340px;
+    /* @tweakable Height of the watermark logo in the video player on mobile */
+    --watermark-height-mobile: 52px;
+
+    /* @tweakable The main font stack for the website body (retro-modern) */
+    --body-font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    /* @tweakable Font stack for headings (h1, h2) */
+    --heading-font-family: "Trebuchet MS", "Lucida Sans", Arial, sans-serif;
+    /* @tweakable Font stack for the search input */
+    --search-input-font-family: Tahoma, Verdana, sans-serif;
+    /* @tweakable Font stack for the chat input */
+    --chat-input-font-family: Tahoma, Verdana, sans-serif;
+    /* @tweakable Font stack for the chat header */
+    --chat-header-font-family: Tahoma, Verdana, sans-serif;
+    /* @tweakable Font stack for individual chat messages */
+    --chat-message-font-family: Tahoma, Verdana, sans-serif;
+    /* @tweakable Font stack for the header slogan */
+    --header-slogan-font-family: "Trebuchet MS", Arial, sans-serif;
+
+    /* Visual tuning */
+    /* @tweakable Background paper color for refined retro theme */
+    --paper-bg: #f4f7fb;
+    /* @tweakable Border color for retro bevels */
+    --retro-border: #9bb3c6;
+    /* @tweakable Primary accent color for buttons/links */
+    /** @tweakable Primary site accent color (used for links, buttons, and highlights) */
+    --retro-accent: #790000;
+    /* @tweakable Muted text color */
+    --muted-text: #58707a;
+
+    /* @tweakable Card background used across tiles */
+    --card-bg: #ffffff;
+    /* @tweakable Small inset border size to emulate beveled look */
+    --inset-border-size: 2px;
+
+    /* subtle shadow for modernized appearance */
+    --soft-shadow: 0 6px 18px rgba(13, 38, 54, 0.06);
+}

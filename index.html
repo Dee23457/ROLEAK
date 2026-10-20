@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ROLEAK</title>
+    <!-- Load CSS files -->
+    <link rel="stylesheet" href="variables.css">
+    <link rel="stylesheet" href="base.css">
+    <link rel="stylesheet" href="header.css">
+    <link rel="stylesheet" href="controls.css">
+    <link rel="stylesheet" href="video-list.css">
+
+    <link rel="stylesheet" href="modal.css">
+    <link rel="stylesheet" href="responsive.css">
+
+    <script type="importmap">
+        {
+            "imports": {
+                "lit": "https://esm.run/lit@2.8.0",
+                "@lit/reactive-element": "https://esm.run/@lit/reactive-element@1.6.3",
+                "lit-element": "https://esm.run/lit-element@3.5.2",
+                "lit-html": "https://esm.run/lit-html@2.8.0",
+                "lit/decorators.js": "https://esm.run/lit@2.8.0/decorators.js",
+                "lit/directives/until.js": "https://esm.run/lit@2.8.0/directives/until.js",
+                "lit/directives/repeat.js": "https://esm.run/lit@2.8.0/directives/repeat.js",
+                "dompurify": "https://esm.run/dompurify@3.0.8"
+            }
+        }
+    </script>
+</head>
+<body>
+    <header>
+        <div class="header-left">
+            <!-- /* @tweakable The source URL for the site logo image */ -->
+            <!-- Logo switched to the new asset; change the src below to fine-tune -->
+            <img src="/RoLeakLogo.png" alt="ROLEAK Logo" id="site-logo">
+            <!-- /* @tweakable Controls whether the search input is visible in the header */ -->
+            <div class="header-search">
+                <!-- /* @tweakable Placeholder text for the search input (user-visible) */ -->
+                <input type="text" id="search-input" placeholder="Search videos...">
+            </div>
+        </div>
+
+        <div class="header-controls">
+            <button id="upload-button">Upload Video</button>
+        </div>
+    </header>
+    <div id="content-wrapper">
+
+
+        <main id="video-list-container">
+            <!-- Video items will be rendered here by script.js -->
+            <!-- Initial content will be managed by script.js based on data state -->
+        </main>
+
+
+    </div>
+
+    <!-- Modal / Page container for viewing video + comments + like/share -->
+    <div id="video-modal-container"></div>
+
+    <script type="module" src="script.js"></script>
+</body>
+</html>

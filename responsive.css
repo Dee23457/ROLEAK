@@ -1,0 +1,46 @@
+<<<<<<< SEARCH
+<<<<<<< SEARCH
+/* Media query for smaller screens */
+@media (max-width: 768px) {
+    #content-wrapper {
+        flex-direction: column;
+        gap: 20px;
+        padding: 0
+=======
+/* Media query for smaller screens */
+@media (max-width: 900px) {
+    #content-wrapper {
+        flex-direction: column;
+        gap: 16px;
+        padding: 0 12px;
+    }
+
+    #channels-sidebar {
+        width: 100%;
+        order: 2;
+        display: flex;
+        overflow-x: auto;
+        padding: 8px;
+        gap: 8px;
+    }
+
+    #video-list-container {
+        order: 1;
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+        gap: 12px;
+    }
+
+    #chat-container {
+        order: 3;
+        width: 100%;
+    }
+
+    header {
+        padding: 10px 12px;
+    }
+
+    .modal-content {
+        width: calc(100% - 30px);
+        max-width: calc(100% - 30px);
+    }
+}

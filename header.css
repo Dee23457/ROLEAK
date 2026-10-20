@@ -1,0 +1,100 @@
+/* Modernized retro header: cleaner spacing, subtle shadows, tweakable sizes */
+/* @tweakable Header height (px) */
+:root { --header-height: 64px; }
+
+header {
+    background: linear-gradient(180deg, #ffffff 0%, #f1f6fb 100%);
+    color: #0f2a33;
+    padding: 10px 18px;
+    margin-bottom: 18px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: var(--inset-border-size) solid var(--retro-border);
+    box-shadow: var(--soft-shadow);
+    font-family: var(--heading-font-family);
+    height: var(--header-height);
+    box-sizing: border-box;
+}
+
+/* Left group: logo + slogan */
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+#site-logo {
+    height: 52px; /* @tweakable Logo height in header */
+    max-height: 52px;
+    flex-shrink: 0;
+    border: none;
+    padding: 0;
+    background: transparent;
+    box-shadow: none;
+    cursor: pointer;
+    transition: transform 0.12s ease;
+}
+#site-logo:hover { transform: translateY(-2px); }
+
+/* Slogan refined and subdued */
+#header-slogan {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--muted-text);
+    text-transform: none;
+    letter-spacing: 0.4px;
+    font-family: var(--header-slogan-font-family);
+}
+
+/* Right side controls: cleaner buttons and spacing */
+.header-controls {
+    display:flex;
+    align-items:center;
+    gap:10px;
+}
+
+/* Header-embedded search area (placed next to logo). */
+/* @tweakable Width of the header search input (e.g., '320px' or '40%') */
+.header-search {
+    display:flex;
+    align-items:center;
+}
+
+/* @tweakable Width of the search input when placed in the header */
+.header-search input#search-input {
+    width: 340px;
+    padding: 8px 10px;
+    border: 1px solid rgba(0,0,0,0.06);
+    border-radius: 6px;
+    font-size: 0.95rem;
+    background: #fff;
+    box-shadow: 0 4px 12px rgba(13,38,54,0.03);
+}
+
+/* Make header search responsive on narrow viewports */
+@media (max-width: 720px) {
+    .header-search input#search-input {
+        width: 180px;
+        font-size: 0.9rem;
+    }
+}
+
+
+
+#upload-button {
+    background: linear-gradient(180deg, #fff, #ffdcc0);
+    color: #0a1a1f;
+    border: 1px solid rgba(0,0,0,0.06);
+    padding: 8px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+    box-shadow: 0 2px 6px rgba(13,38,54,0.06);
+    transition: transform 0.08s ease, box-shadow 0.08s ease;
+}
+
+#upload-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(13,38,54,0.08);
+}

@@ -1,0 +1,567 @@
+/* --- Chat Styles (Revamped Side Positioning) --- */
+/* @tweakable Color used for the chat header/back button */
+:root { --chat-back-color: #2b2b2b; }
+
+#chat-container {
+    margin: 0;
+    padding: 12px;
+    /* @tweakable Background color for the main chat container */
+    background-color: #fff8eb; /* warm chat paper */
+    /* @tweakable Border style for the chat container */
+    border: 3px solid var(--retro-border); /* stronger brown border */
+    border-radius: 4px; /* slightly rounded corners */
+    /* @tweakable Box shadow for the chat container */
+    box-shadow: 6px 6px 0 rgba(0,0,0,0.06); /* blocky shadow reminiscent of older UI */
+    transition: width 0.25s ease, padding 0.25s ease, transform 0.12s ease;
+    overflow: hidden;
+    height: auto;
+    display: flex;
+    flex-direction: column;
+    width: var(--chat-expanded-width);
+    flex-shrink: 0;
+    font-family: var(--chat-message-font-family);
+}
+
+/* Header layout now includes a back button and a compact comments indicator */
+#chat-header {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+    flex-shrink: 0;
+    border-bottom: 1px solid #a0a0a0;
+    padding-bottom: 8px;
+    background-color: #d4d0c8;
+    padding-top: 6px;
+    padding-left: 8px;
+    padding-right: 8px;
+    color: #000;
+}
+
+/* Back button (prominent, touch friendly) */
+/* @tweakable Size of the chat back button in px */
+#chat-back-button {
+    width: 28px;
+    height: 28px;
+    min-width: 28px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(180deg,#ffffff,#e7e2d6);
+    border: 2px outset #c0c0c0;
+    cursor: pointer;
+    font-weight: bold;
+    color: var(--chat-back-color);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.06);
+    border-radius: 3px;
+    padding: 0;
+}
+
+/* Back button hover/active behavior */
+#chat-back-button:hover { transform: translateY(-1px); }
+#chat-back-button:active { border-style: inset; }
+
+/* Comments indicator in header (compact) */
+/* @tweakable Color for comments indicator text */
+#chat-comments-indicator {
+    font-size: 0.9em;
+    color: #333;
+    margin-left: 8px;
+    font-weight: 600;
+    opacity: 0.9;
+}
+
+/* Minimized state styles for side chat */
+#chat-container.minimized-side {
+    width: var(--chat-minimized-width);
+    padding: 8px;
+    border: 2px outset #c0c0c0; /* Maintain bevel border when minimized */
+    box-shadow: 3px 3px 7px rgba(0,0,0,0.3);
+}
+
+#chat-container.minimized-side #chat-header {
+    margin-bottom: 0;
+    border-bottom: none;
+    padding-bottom: 0;
+    padding: 6px 8px;
+}
+
+/* Title tweaks */
+#chat-container h2 {
+    text-align: left;
+    flex-grow: 1;
+    color: #000;
+    margin-top: 0;
+    margin-bottom: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-weight: bold;
+    font-size: 1.05em;
+    font-family: var(--chat-header-font-family);
+}
+
+/* Minimize button refined for alignment with the back button */
+#minimize-chat-button {
+    background: none;
+    border: none;
+    font-size: 1.4em;
+    cursor: pointer;
+    color: #000;
+    transition: color 0.2s ease;
+    padding: 0 6px;
+    line-height: 1;
+    margin-left: 8px;
+    flex-shrink: 0;
+    background-color: #d4d0c8;
+    border: 1px outset #c0c0c0;
+    border-radius: 2px;
+    font-weight: bold;
+    width: 22px;
+    height: 22px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-sizing: border-box;
+}
+
+/* Keep rest of chat styles largely intact but slightly tightened for compact layout */
+#chat-content {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    min-height: 0;
+}
+
+#chat-container.minimized-side #chat-content {
+    display: none;
+}
+
+/* Chat messages container uses compact card-like rows and integrates comment replies look */
+#chat-messages {
+    height: 30px;
+    overflow-y: auto;
+    border: 2px inset #c0c0c0;
+    background-color: #fff;
+    padding: 10px;
+    margin-bottom: 12px;
+    display: flex;
+    flex-direction: column-reverse;
+    flex-grow: 1;
+    min-height: 0;
+    border-radius: 2px;
+}
+
+/* Message row looks more like a compact comment card */
+.chat-message {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 8px;
+    word-break: break-word;
+    background-color: transparent;
+    padding: 6px;
+    border-radius: 3px;
+    border: 1px solid rgba(0,0,0,0.03);
+}
+
+.chat-message:last-child { margin-bottom: 0; }
+
+.chat-message img {
+    width: 34px;
+    height: 34px;
+    border-radius: 6px;
+    margin-right: 10px;
+    flex-shrink: 0;
+    border: 1px solid #a0a0a0;
+}
+
+/* Message content and small reply metadata */
+.message-content {
+    flex-grow: 1;
+    min-width: 0;
+    font-size: 0.98em;
+}
+
+.message-content strong {
+    display: block;
+    font-size: 0.9em;
+    color: #333;
+    margin-bottom: 4px;
+    font-weight: 700;
+}
+
+.message-content span {
+    font-size: 0.98em;
+    color: #222;
+}
+
+/* Chat form looks like a classic post box with comment affordance */
+#chat-form {
+    display: flex;
+    gap: 10px;
+    flex-shrink: 0;
+    background-color: #d4d0c8;
+    padding: 8px;
+    border: 2px inset #c0c0c0;
+    border-radius: 2px;
+}
+
+#chat-input {
+    flex-grow: 1;
+    padding: 8px 10px;
+    border: 1px inset #a0a0a0;
+    border-radius: 2px;
+    font-size: 1em;
+    font-family: var(--chat-input-font-family);
+    background-color: #fff;
+}
+
+/* Send button more prominent (classic beveled look) */
+#chat-form button {
+    padding: 6px 10px;
+    background: #d4d0c8;
+    color: #000;
+    border: 2px outset #c0c0c0;
+    border-radius: 2px;
+    cursor: pointer;
+    font-size: 0.9em;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+#chat-form button:hover { background:#cfcac0; border-color:#b8b8b8; }
+#chat-form button:active { border-style: inset; }
+
+/* Remove button small and inline like a moderation control */
+.remove-chat-button {
+    background-color: #c0c0c0;
+    color: #000;
+    border: 2px outset #c0c0c0;
+    padding: 2px 5px;
+    border-radius: 2px;
+    cursor: pointer;
+    font-size: 0.7em;
+    font-weight: normal;
+    transition: none;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-left: 8px;
+    flex-shrink: 0;
+    align-self: center;
+}
+
+.remove-chat-button:hover { background-color:#b0b0b0; border-color:#a0a0a0; }
+.remove-chat-button:active { border-style: inset; }
+
+/* Minimized state styles for side chat */
+#chat-container.minimized-side {
+    width: var(--chat-minimized-width);
+    padding: 10px;
+    /* @tweakable Border style for the chat container when minimized */
+     border: 2px outset #c0c0c0; /* Maintain bevel border when minimized */
+    box-shadow: 3px 3px 7px rgba(0,0,0,0.3);
+}
+
+#chat-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    /* @tweakable Margin below the chat header */
+    margin-bottom: 15px; /* Slightly reduced margin */
+    flex-shrink: 0;
+    /* @tweakable Border bottom style for the chat header */
+    border-bottom: 1px solid #a0a0a0; /* Darker separator */
+    /* @tweakable Padding below the chat header */
+    padding-bottom: 8px; /* Reduced padding */
+    /* @tweakable Background color for the chat header */
+    background-color: #d4d0c8; /* Standard gray button color */
+    /* @tweakable Padding above and below chat header */
+    padding-top: 5px;
+    padding-left: 10px;
+    padding-right: 10px;
+    /* @tweakable Border style for chat header (matches container) */
+    border-bottom: 1px solid #a0a0a0;
+    /* @tweakable Text color for chat header */
+    color: #000;
+}
+
+/* Adjust header margin in minimized state */
+#chat-container.minimized-side #chat-header {
+    margin-bottom: 0;
+    border-bottom: none;
+    padding-bottom: 0;
+    padding: 5px 10px;
+}
+
+#chat-container h2 {
+    text-align: center;
+    flex-grow: 1;
+    /* @tweakable Text color for chat header */
+    color: #000; /* Black text */
+    margin-top: 0;
+    margin-bottom: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    /* @tweakable Font weight for chat header */
+    font-weight: bold;
+    /* @tweakable Font size for chat header */
+    font-size: 1.1em;
+    /* @tweakable Font family for chat header */
+    font-family: var(--chat-header-font-family); /* New variable for header font */
+}
+
+/* Adjust title alignment in minimized state */
+#chat-container.minimized-side h2 {
+    text-align: left;
+}
+
+#minimize-chat-button {
+    background: none;
+    border: none;
+    font-size: 1.5em;
+    cursor: pointer;
+    /* @tweakable Color for minimize button */
+    color: #000; /* Black color */
+    transition: color 0.2s ease;
+    padding: 0 5px; /* Add padding for easier clicking */
+    line-height: 1;
+    margin-left: 10px;
+    flex-shrink: 0;
+    /* Add simple border and background for button appearance */
+    /* @tweakable Background color for the minimize button */
+    background-color: #d4d0c8;
+    /* @tweakable Border style for the minimize button */
+    border: 1px outset #c0c0c0;
+    border-radius: 0; /* Square button */
+    font-weight: bold; /* Match header font weight */
+    text-align: center;
+    width: 20px; /* Fixed width for square appearance */
+    height: 20px; /* Fixed height */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-sizing: border-box; /* Include border in dimensions */
+}
+
+#minimize-chat-button:hover {
+    /* @tweakable Hover color for minimize button */
+    color: #333;
+}
+
+#minimize-chat-button:active {
+    /* @tweakable Active border style for the minimize button */
+    border-style: inset; /* Simulate pressing the button */
+}
+
+/* Show/hide content based on minimized state */
+#chat-content {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    min-height: 0;
+}
+
+#chat-container.minimized-side #chat-content {
+    display: none;
+}
+
+#chat-messages {
+    height: 30px; /* Base height, will be filled by flex-grow */
+    overflow-y: auto;
+    /* @tweakable Border style for the chat messages area */
+    border: 2px inset #c0c0c0; /* Inset border for sunk effect */
+    /* @tweakable Background color for the chat messages area */
+    background-color: #fff; /* White background */
+    padding: 10px;
+    margin-bottom: 15px;
+    display: flex;
+    flex-direction: column-reverse; /* Display newest messages at the bottom */
+    flex-grow: 1;
+    min-height: 0; /* Allow flex item to shrink below content size */
+    border-radius: 0; /* No border radius */
+}
+
+/* Styles for the scrollbar (Webkit browsers like Chrome, Safari) */
+#chat-messages::-webkit-scrollbar {
+    /* @tweakable Width of the chat message scrollbar */
+    width: 16px; /* Standard scrollbar width */
+}
+
+#chat-messages::-webkit-scrollbar-track {
+    /* @tweakable Background color of the chat message scrollbar track */
+    background: #d4d0c8; /* Gray background */
+    /* @tweakable Border style for the scrollbar track */
+    border: 1px solid #c0c0c0;
+}
+
+#chat-messages::-webkit-scrollbar-thumb {
+    /* @tweakable Background color of the chat message scrollbar thumb (the draggable part) */
+    background-color: #b0b0b0; /* Darker gray */
+    /* @tweakable Border style for the scrollbar thumb */
+    border: 1px outset #c0c0c0; /* Bevel effect on the thumb */
+}
+
+#chat-messages::-webkit-scrollbar-thumb:hover {
+    /* @tweakable Hover background color of the chat message scrollbar thumb */
+    background-color: #a0a0a0;
+}
+
+#chat-messages::-webkit-scrollbar-thumb:active {
+    /* @tweakable Active border style for the scrollbar thumb */
+    border-style: inset; /* Simulate pressing */
+}
+
+/* Add scrollbar corner style */
+#chat-messages::-webkit-scrollbar-corner {
+    /* @tweakable Background color of the scrollbar corner */
+    background: #d4d0c8;
+}
+
+.chat-message {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 10px;
+    word-break: break-word;
+    /* @tweakable Background color for individual chat messages */
+    background-color: transparent; /* No background for messages themselves */
+    padding: 0; /* No padding on the message div */
+    border-radius: 0; /* No border radius */
+    border: none; /* No border */
+    box-shadow: none; /* No shadow */
+}
+
+.chat-message:last-child {
+    margin-bottom: 0;
+}
+
+.chat-message img {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    margin-right: 10px;
+    flex-shrink: 0;
+    /* @tweakable Border style for chat message avatars */
+    border: 1px solid #a0a0a0; /* Simple border */
+}
+
+.message-content {
+    flex-grow: 1;
+    min-width: 0; /* Needed for overflow-wrap to work */
+}
+
+.message-content strong {
+    display: block;
+    font-size: 0.9em;
+    /* @tweakable Color for chat message usernames */
+    color: #555; /* Dark gray */
+    margin-bottom: 2px;
+    /* @tweakable Font weight for chat message usernames */
+    font-weight: bold;
+    /* @tweakable Font family for chat message usernames */
+    font-family: var(--chat-message-font-family);
+}
+
+.message-content span {
+    /* @tweakable Font family for chat message text */
+    font-family: var(--chat-message-font-family);
+    font-size: 1em;
+    /* @tweakable Text color for chat message text */
+    color: #333;
+}
+
+#chat-form {
+    display: flex;
+    gap: 10px;
+    flex-shrink: 0;
+    /* @tweakable Background color for the chat input area */
+    background-color: #d4d0c8; /* Match header background */
+    /* @tweakable Padding around the chat input area */
+    padding: 8px; /* Add some padding */
+    /* @tweakable Border style for the chat input area */
+    border: 2px inset #c0c0c0; /* Inset border */
+    border-radius: 0; /* No radius */
+}
+
+#chat-input {
+    flex-grow: 1;
+    padding: 5px 10px; /* Reduced padding */
+    /* @tweakable Border style for the chat input field */
+    border: 1px inset #a0a0a0; /* Inner inset border */
+    border-radius: 0; /* Square corners */
+    font-size: 1em;
+    /* @tweakable Font family for the chat input field */
+    font-family: var(--chat-input-font-family);
+    /* @tweakable Background color for the chat input field */
+    background-color: #fff; /* White input background */
+}
+
+#chat-form button {
+    padding: 5px 10px; /* Adjusted padding */
+    /* @tweakable Background color gradient for the chat send button */
+    background: #d4d0c8; /* Standard gray button color */
+    /* @tweakable Text color for the chat send button */
+    color: #000; /* Black text */
+    /* @tweakable Border style for the chat send button */
+    border: 2px outset #c0c0c0; /* Outset border */
+    /* @tweakable Border radius for the chat send button */
+    border-radius: 0; /* Square button */
+    cursor: pointer;
+    transition: none; /* Remove transition for classic look */
+    font-size: 0.9em; /* Smaller font size */
+    flex-shrink: 0;
+    /* @tweakable Font weight for the chat send button */
+    font-weight: normal; /* Normal weight */
+    /* @tweakable Box shadow for the chat send button */
+    box-shadow: none; /* No initial shadow */
+    text-transform: uppercase; /* Capitalize text */
+    letter-spacing: 0.5px; /* Add letter spacing */
+}
+
+#chat-form button:hover {
+    /* @tweakable Hover background color for the chat send button */
+    background: #d0d0d0; /* Slightly darker gray on hover */
+    border-color: #c0c0c0;
+    box-shadow: none;
+}
+
+#chat-form button:active {
+    /* @tweakable Active (pressed) background color for the chat send button */
+    background: #b0b0b0; /* Even darker gray when pressed */
+    /* @tweakable Active border style for the chat send button */
+    border-style: inset; /* Simulate pressing */
+    box-shadow: none;
+}
+
+.remove-chat-button {
+    /* @tweakable Background color for the remove chat message button */
+    background-color: #c0c0c0; /* Gray button */
+    /* @tweakable Text color for the remove chat message button */
+    color: #000; /* Black text */
+    /* @tweakable Border style for the remove chat message button */
+    border: 2px outset #c0c0c0; /* Outset border */
+    padding: 2px 5px; /* Smaller padding */
+    border-radius: 0; /* Square */
+    cursor: pointer;
+    font-size: 0.7em; /* Smaller font */
+    /* @tweakable Font weight for the remove chat message button */
+    font-weight: normal;
+    transition: none;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-left: 5px; /* Space from message */
+    flex-shrink: 0;
+    align-self: center; /* Vertically center button */
+}
+
+.remove-chat-button:hover {
+    /* @tweakable Hover background color for the remove chat message button */
+    background-color: #b0b0b0;
+    border-color: #a0a0a0;
+}
+
+.remove-chat-button:active {
+    /* @tweakable Active border style for the remove chat message button */
+    border-style: inset;
+}
