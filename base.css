@@ -1,7 +1,7 @@
 body {
     font-family: var(--body-font-family);
     margin: 0;
-    background-color: transparent;
+    background-color: #ffffff;
     color: #0c2130;
     display: flex;
     flex-direction: column;
