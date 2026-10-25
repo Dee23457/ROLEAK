@@ -22,12 +22,23 @@ import { renderVideoList, handleRemoveVideo, handleToggleVisibility, handleRenam
 /* @tweakable Use the video "page" render function exported from video-modal.js (renderPage) */
 import { openModal, closeModal, renderPage, setCloseModalCallback } from './video-modal.js';
 import { handleUpload } from './video-upload.js';
+import { renderChatMessages, setInitialChatMinimizeState } from './chat.js';
 
 
 
 
-// Initialize WebsimSocket
+// Initialize WebsimSocket (provided by websim-local.js)
 const room = new WebsimSocket();
+
+function requireLogin(actionLabel = 'do that') {
+    const user = window.RoleakAuth?.getCurrentUser?.();
+    if (!user || !user.username || user.username === 'Guest') {
+        alert('Please log in or register to ' + actionLabel + '.');
+        document.querySelector('[data-open-auth="login"]')?.click();
+        return false;
+    }
+    return true;
+}
 
 // Helper function to play a sound
 function playSound(audioElement) {
@@ -113,6 +124,7 @@ function getOrCreateUploadMenu() {
     const btnUpload = makeButton(UPLOAD_MENU_LABEL_UPLOAD, 'linear-gradient(180deg,#fff,#fff7ef)');
     btnUpload.addEventListener('click', async (e) => {
         hideUploadMenu();
+        if (!requireLogin('upload a video')) return;
         playSound(uploadClickSound);
         await handleUpload(room, refreshVideoListDisplay, isUploading, updateIsUploadingState);
     });
@@ -120,6 +132,7 @@ function getOrCreateUploadMenu() {
     const btnPaste = makeButton(UPLOAD_MENU_LABEL_PASTE_URL, 'linear-gradient(180deg,#fff,#f3faff)');
     btnPaste.addEventListener('click', async (e) => {
         hideUploadMenu();
+        if (!requireLogin('add a video')) return;
         const url = prompt('Paste a direct video URL (mp4/webm) to add as a record:');
         if (!url) return;
         const title = prompt('Enter a title for this video (optional):') || 'Linked Video';
@@ -567,6 +580,7 @@ room.initialize().then(() => {
         btnUpload.style.background = 'linear-gradient(180deg,#fff,#fff7ef)';
         btnUpload.addEventListener('click', async (e) => {
             hideUploadMenu();
+            if (!requireLogin('upload a video')) return;
             playSound(uploadClickSound);
             await handleUpload(room, refreshVideoListDisplay, isUploading, updateIsUploadingState);
         });

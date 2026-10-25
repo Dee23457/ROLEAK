@@ -3,16 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ROLEAK</title>
-    <!-- Load CSS files -->
+    <title>ROLEAK - Redefining The Media</title>
     <link rel="stylesheet" href="variables.css">
     <link rel="stylesheet" href="base.css">
     <link rel="stylesheet" href="header.css">
     <link rel="stylesheet" href="controls.css">
     <link rel="stylesheet" href="video-list.css">
-
     <link rel="stylesheet" href="modal.css">
     <link rel="stylesheet" href="responsive.css">
+    <link rel="stylesheet" href="auth.css">
+    <link rel="stylesheet" href="liveleak-theme.css">
 
     <script type="importmap">
         {
@@ -28,38 +28,141 @@
             }
         }
     </script>
+    <script type="module" src="websim-local.js"></script>
 </head>
 <body>
-    <header>
-        <div class="header-left">
-            <!-- /* @tweakable The source URL for the site logo image */ -->
-            <!-- Logo switched to the new asset; change the src below to fine-tune -->
-            <img src="/RoLeakLogo.png" alt="ROLEAK Logo" id="site-logo">
-            <!-- /* @tweakable Controls whether the search input is visible in the header */ -->
-            <div class="header-search">
-                <!-- /* @tweakable Placeholder text for the search input (user-visible) */ -->
-                <input type="text" id="search-input" placeholder="Search videos...">
-            </div>
-        </div>
-
-        <div class="header-controls">
-            <button id="upload-button">Upload Video</button>
-        </div>
-    </header>
-    <div id="content-wrapper">
-
-
-        <main id="video-list-container">
-            <!-- Video items will be rendered here by script.js -->
-            <!-- Initial content will be managed by script.js based on data state -->
-        </main>
-
-
+    <div class="ll-topbar">
+        <span class="ll-tagline">Redefining The Media</span>
+        <div class="ll-topbar-links" id="auth-area"></div>
     </div>
 
-    <!-- Modal / Page container for viewing video + comments + like/share -->
+    <div class="ll-header">
+        <a href="#" class="ll-logo-link" id="site-logo-wrap">
+            <img src="RoLeakLogo.png" alt="ROLEAK" id="site-logo" class="ll-logo">
+        </a>
+        <nav class="ll-main-nav">
+            <a href="#" class="ll-nav-tab active">Home</a>
+            <a href="#" class="ll-nav-tab">ROLEAK Live</a>
+            <a href="#" class="ll-nav-tab">Sections &#9660;</a>
+            <a href="#" class="ll-nav-tab">Forum</a>
+            <a href="#" class="ll-nav-tab">Chat</a>
+            <a href="#" class="ll-nav-tab">Your Say</a>
+            <form class="ll-search-form" onsubmit="return false;">
+                <input type="text" id="search-input" placeholder="Enter your query...">
+                <button type="submit" id="search-btn">Search</button>
+            </form>
+        </nav>
+    </div>
+
+    <div class="ll-subnav">
+        <a href="#" data-open-auth="register">Register</a>
+        <span>|</span>
+        <a href="#" data-open-auth="login">Login</a>
+        <span>|</span>
+        <a href="#">Faq</a>
+        <span>|</span>
+        <a href="#">Contact Us</a>
+        <span>|</span>
+        <a href="#">Set As Homepage</a>
+        <span>|</span>
+        <a href="#">Advanced Search</a>
+        <span class="ll-subnav-right">
+            <button type="button" id="upload-button" class="ll-upload-btn">Upload Video</button>
+        </span>
+    </div>
+
+    <div class="ll-sections">
+        <strong>Sections:</strong>
+        <a href="#">All</a>
+        <a href="#">News</a>
+        <a href="#">Iraq</a>
+        <a href="#">Afghanistan</a>
+        <a href="#">Iran</a>
+        <a href="#">Politics</a>
+        <a href="#">Entertainment</a>
+        <a href="#">Celebrity</a>
+        <a href="#">Education</a>
+        <a href="#">Citizen Journalism</a>
+    </div>
+
+    <div id="content-wrapper" class="ll-content">
+        <div class="ll-main-col">
+            <h2 class="ll-section-title">Headlines</h2>
+            <main id="video-list-container"></main>
+        </div>
+
+        <aside class="ll-sidebar">
+            <div class="ll-side-box ll-promo">
+                <div class="ll-promo-icon">&#9654;</div>
+                <div class="ll-promo-text">
+                    <strong>Join ROLEAK now!</strong>
+                    <p>Upload, comment, and chat with your own account.</p>
+                </div>
+            </div>
+
+            <div class="ll-side-box ll-login-box" id="ll-login-box">
+                <div class="ll-login-links">
+                    <a href="#" data-open-auth="login">Login</a>
+                    <span>|</span>
+                    <a href="#" data-open-auth="register">Register</a>
+                    <span>|</span>
+                    <a href="#">Lost Password?</a>
+                </div>
+                <p class="ll-login-heading">Log in to your ROLEAK account:</p>
+                <form id="ll-side-login-form" class="ll-side-login-form">
+                    <label>
+                        User Name
+                        <input type="text" id="ll-side-username" autocomplete="username" required>
+                    </label>
+                    <label>
+                        Password
+                        <input type="password" id="ll-side-password" autocomplete="current-password" required>
+                    </label>
+                    <p class="ll-login-hint">(new users can register <a href="#" data-open-auth="register">here</a>)</p>
+                    <p id="ll-side-login-error" class="auth-error" hidden></p>
+                    <button type="submit" class="ll-login-submit">Login to ROLEAK</button>
+                </form>
+            </div>
+
+            <div class="ll-side-box">
+                <h3>ROLEAK in the News</h3>
+                <p class="ll-news-blurb">ROLEAK has become the place to go to see the way through the eyes of the community.</p>
+            </div>
+        </aside>
+    </div>
+
     <div id="video-modal-container"></div>
 
+    <div id="auth-modal" class="auth-modal" hidden>
+        <div class="auth-modal-backdrop" data-close-auth></div>
+        <div class="auth-modal-panel" role="dialog" aria-modal="true" aria-labelledby="auth-modal-title">
+            <h2 id="auth-modal-title">Sign in</h2>
+            <div class="auth-tabs">
+                <button type="button" class="auth-tab active" data-tab="login">Login</button>
+                <button type="button" class="auth-tab" data-tab="register">Register</button>
+            </div>
+            <form id="auth-form">
+                <label>
+                    Username
+                    <input type="text" id="auth-username" name="username" autocomplete="username" required minlength="2" maxlength="32">
+                </label>
+                <label>
+                    Password
+                    <input type="password" id="auth-password" name="password" autocomplete="current-password" required minlength="3">
+                </label>
+                <p id="auth-error" class="auth-error" hidden></p>
+                <button type="submit" id="auth-submit">Login</button>
+            </form>
+            <p class="auth-hint">Accounts are stored on this device. Create one to upload, comment, and chat. To be admin, register as <strong>Scratch_Catalouge</strong>.</p>
+            <button type="button" class="auth-close" data-close-auth>Close</button>
+        </div>
+    </div>
+
+    <footer class="ll-footer">
+        <p>&copy; ROLEAK &mdash; local demo with accounts. Not affiliated with LiveLeak.</p>
+    </footer>
+
+    <script type="module" src="auth-ui.js"></script>
     <script type="module" src="script.js"></script>
 </body>
 </html>

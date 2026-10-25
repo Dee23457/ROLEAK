@@ -42,7 +42,7 @@ export function renderChatMessages(room, messages, currentUserUsername) {
 
     render(html`
         ${sortedMessages.map(msg => {
-            const user = room.peers[msg.clientId] || { username: msg.username, avatarUrl: msg.username ? `https://images.websim.ai/avatar/${msg.username}` : '' };
+            const user = room.peers[msg.clientId] || { username: msg.username, avatarUrl: msg.username ? `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(msg.username)}` : '' };
             const avatarUrl = user.avatarUrl || '';
 
             // Sanitize message text before rendering.

@@ -101,12 +101,20 @@ function videoItemTemplate(room, video, currentUserUsername, handleVideoClick, h
     /* @tweakable Size (px) of the uploader avatar shown in the list (square) */
     const UPLOADER_AVATAR_SIZE = 36;
 
-    const avatarUrl = video.username ? `https://images.websim.com/avatar/${encodeURIComponent(video.username)}` : '';
+    const avatarUrl = video.username ? `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(video.username)}` : '';
+    const thumbSrc = (video.thumbnailUrl && !String(video.thumbnailUrl).startsWith('localblob://'))
+        ? (video.thumbnailUrl || DEFAULT_THUMBNAIL_URL)
+        : DEFAULT_THUMBNAIL_URL;
+    // Resolve localblob thumbnails asynchronously via data attribute + helper
+    const needsResolve = video.thumbnailUrl && String(video.thumbnailUrl).startsWith('localblob://');
 
     return html`
         <div class="video-item" @click=${() => handleVideoClick(video)}>
             <div class="thumb" style="width:${THUMB_WIDTH}px;height:${THUMB_HEIGHT}px;">
-                <img src="${video.thumbnailUrl || DEFAULT_THUMBNAIL_URL}" alt="thumbnail">
+                <img src="${needsResolve ? DEFAULT_THUMBNAIL_URL : thumbSrc}" alt="thumbnail"
+                     data-localblob="${needsResolve ? video.thumbnailUrl : ''}"
+                     @load=${needsResolve ? null : null}
+                     class="${needsResolve ? 'needs-blob-resolve' : ''}">
                 ${HOSTED_BADGE_CONFIG && HOSTED_BADGE_CONFIG.showInList ? html`
                     <div class="video-thumbnail-badge" style="left:${HOSTED_BADGE_CONFIG.left}px; top:${HOSTED_BADGE_CONFIG.top}px;">
                         <img src="${HOSTED_BADGE_CONFIG.url}" alt="ROLEAK" style="height:${HOSTED_BADGE_CONFIG.height}px;opacity:${HOSTED_BADGE_CONFIG.opacity};">

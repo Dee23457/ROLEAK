@@ -22,7 +22,7 @@ export const ALLOWED_THUMBNAIL_FILE_TYPES = ['image/png', 'image/jpeg', 'image/g
 
 /* Default thumbnail URL to use for all videos. */
 /* The default thumbnail URL to use for videos that don't have a custom thumbnail (e.g., fallback on error) */
-export const DEFAULT_THUMBNAIL_URL = "image.png";
+export const DEFAULT_THUMBNAIL_URL = "DefaultThumbnail.png";
 
 /* @tweakable The time (in seconds) into the video from which to capture the thumbnail frame. */
 export const THUMBNAIL_CAPTURE_TIME = 1; // Capture 1 second into the video
@@ -36,7 +36,7 @@ export const THUMBNAIL_HEIGHT = 180; // A standard 16:9 aspect ratio size
 
 /* The source URL for the logo image used as a watermark on the video player. */
 /* The source URL for the watermark logo image in the video player */
-export const WATERMARK_LOGO_URL = "/IMG_3059.png";
+export const WATERMARK_LOGO_URL = "IMG_3059.png";
 
 /* The height of the watermark logo in the video player. */
 export const WATERMARK_LOGO_HEIGHT = 80; // in pixels
@@ -79,10 +79,10 @@ export const REMOVE_CHAT_MESSAGE_CONFIRM_MESSAGE = 'Are you sure you want to rem
 export const REMOVE_CHAT_MESSAGE_BUTTON_TEXT = 'Remove';
 
 /* The URL of the sound effect to play when minimizing or unminimizing the chat. */
-export const CHAT_TOGGLE_SOUND_URL = '/Kerplunk.wav';
+export const CHAT_TOGGLE_SOUND_URL = '';
 
 /* Whether to play a sound effect when minimizing or unminimizing the chat. */
-export const ENABLE_CHAT_TOGGLE_SOUND = true;
+export const ENABLE_CHAT_TOGGLE_SOUND = false;
 
 /* The volume for the chat toggle sound (0.0 to 1.0). */
 export const CHAT_TOGGLE_SOUND_VOLUME = 1.0;
@@ -90,44 +90,44 @@ export const CHAT_TOGGLE_SOUND_VOLUME = 1.0;
 // --- Sound Effects ---
 
 /* Whether to play a sound effect when clicking a video thumbnail to open the modal. */
-export const ENABLE_VIDEO_CLICK_SOUND = true;
+export const ENABLE_VIDEO_CLICK_SOUND = false;
 /* The URL of the sound effect to play when clicking a video thumbnail. */
-export const VIDEO_CLICK_SOUND_URL = '/button.wav';
+export const VIDEO_CLICK_SOUND_URL = '';
 
 /* Whether to play a sound effect when closing the video modal. */
-export const ENABLE_MODAL_CLOSE_SOUND = true;
+export const ENABLE_MODAL_CLOSE_SOUND = false;
 /* The URL of the sound effect to play when closing the video modal. */
-export const MODAL_CLOSE_SOUND_URL = '/Scroll.wav';
+export const MODAL_CLOSE_SOUND_URL = '';
 
 /* Whether to play a sound effect when clicking the upload button to initiate the file selection. */
-export const ENABLE_UPLOAD_CLICK_SOUND = true;
+export const ENABLE_UPLOAD_CLICK_SOUND = false;
 /* The URL of the sound effect to play when clicking the upload button. */
-export const UPLOAD_CLICK_SOUND_URL = '/button.wav';
+export const UPLOAD_CLICK_SOUND_URL = '';
 
 /* Whether to play a sound effect when successfully sending a chat message. */
-export const ENABLE_SEND_MESSAGE_SOUND = true;
+export const ENABLE_SEND_MESSAGE_SOUND = false;
 /* The URL of the sound effect to play when sending a chat message. */
-export const SEND_MESSAGE_SOUND_URL = '/splat.wav';
+export const SEND_MESSAGE_SOUND_URL = '';
 
 /* Whether to play a sound effect when successfully removing a video. */
-export const ENABLE_REMOVE_VIDEO_SOUND = true;
+export const ENABLE_REMOVE_VIDEO_SOUND = false;
 /* The URL of the sound effect to play when removing a video. */
-export const REMOVE_VIDEO_SOUND_URL = '/Delete.wav';
+export const REMOVE_VIDEO_SOUND_URL = '';
 
 /* Whether to play a sound effect when successfully toggling video visibility. */
-export const ENABLE_TOGGLE_VISIBILITY_SOUND = true;
+export const ENABLE_TOGGLE_VISIBILITY_SOUND = false;
 /* The URL of the sound effect to play when toggling video visibility. */
-export const TOGGLE_VISIBILITY_SOUND_URL = '/button.wav';
+export const TOGGLE_VISIBILITY_SOUND_URL = '';
 
 /* Whether to play a sound effect when clicking the "Change Thumbnail" button (initiating file selection). */
-export const ENABLE_CHANGE_THUMBNAIL_SOUND = true;
+export const ENABLE_CHANGE_THUMBNAIL_SOUND = false;
 /* The URL of the sound effect to play when clicking the "Change Thumbnail" button. */
-export const CHANGE_THUMBNAIL_SOUND_URL = '/button.wav';
+export const CHANGE_THUMBNAIL_SOUND_URL = '';
 
 /* Whether to play a sound effect when successfully removing a chat message (Admin action). */
-export const ENABLE_REMOVE_CHAT_SOUND = true;
+export const ENABLE_REMOVE_CHAT_SOUND = false;
 /* The URL of the sound effect to play when removing a chat message. */
-export const REMOVE_CHAT_SOUND_URL = '/Delete.wav';
+export const REMOVE_CHAT_SOUND_URL = '';
 
 // --- Secret Link Configuration ---
 
