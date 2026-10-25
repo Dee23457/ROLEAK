@@ -1,0 +1,2 @@
+# ROLEAK server uses Python standard library only.
+# This file exists so hosts that expect requirements.txt succeed.
