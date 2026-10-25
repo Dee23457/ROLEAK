@@ -31,6 +31,7 @@
     <script type="module" src="websim-local.js"></script>
 </head>
 <body>
+<div class="ll-page-shell">
     <div class="ll-topbar">
         <span class="ll-tagline">Redefining The Media</span>
         <div class="ll-topbar-links" id="auth-area"></div>
@@ -87,8 +88,22 @@
 
     <div id="content-wrapper" class="ll-content">
         <div class="ll-main-col">
+            
+            <div class="ll-quick-btns">
+                <a href="#">ROLEAK TV</a>
+                <a href="#">Citizen Journalism</a>
+                <a href="#">Your Say</a>
+                <a href="#">Announcements</a>
+            </div>
+
             <h2 class="ll-section-title">Headlines</h2>
             <main id="video-list-container"></main>
+
+            <div class="ll-featured">
+                <h2>Featured Media Items</h2>
+                <p style="color:#666;font-size:12px;margin:0;">Featured videos will show here after uploads. Register and post to get on this list.</p>
+            </div>
+
         </div>
 
         <aside class="ll-sidebar">
@@ -164,5 +179,6 @@
 
     <script type="module" src="auth-ui.js"></script>
     <script type="module" src="script.js"></script>
+</div>
 </body>
 </html>

@@ -60,7 +60,7 @@ export function renderVideoList(room, videoData, currentUserUsername, isUploadin
 
     // Show empty state
     if (!videoData || videoData.length === 0) {
-        container.innerHTML = '<p>No videos uploaded yet.</p>';
+        container.innerHTML = '<div class="ll-empty"><p><strong>No videos uploaded yet.</strong></p><p style="color:#666;font-size:12px;margin-top:4px;">Log in and click <em>Upload Video</em> to post the first one.</p></div>';
         return;
     }
 
@@ -74,7 +74,7 @@ export function renderVideoList(room, videoData, currentUserUsername, isUploadin
     });
 
     if (filtered.length === 0) {
-        container.innerHTML = '<p>No videos match your search.</p>';
+        container.innerHTML = '<div class="ll-empty"><p><strong>No videos match your search.</strong></p></div>';
         return;
     }
 

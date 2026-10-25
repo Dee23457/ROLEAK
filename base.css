@@ -1,16 +1,14 @@
 body {
     font-family: var(--body-font-family);
     margin: 0;
-    background-color: var(--paper-bg);
+    background-color: transparent;
     color: #0c2130;
     display: flex;
     flex-direction: column;
     min-height: 100vh;
     -webkit-font-smoothing:antialiased;
     -moz-osx-font-smoothing:grayscale;
-    background-image:
-        linear-gradient(transparent 60%, rgba(255,255,255,0.02) 60%);
-    background-size: 100% 3px;
+
 }
 
 h1, h2 {
