@@ -1,0 +1,26 @@
+/* Minimal controls stylesheet (was missing from original ZIP) */
+.header-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+#upload-button {
+    padding: 8px 14px;
+    border-radius: 8px;
+    border: 1px solid rgba(0, 0, 0, 0.12);
+    background: linear-gradient(180deg, #fff, #fff7ef);
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 0.95rem;
+}
+
+#upload-button:hover {
+    background: #fff3e0;
+}
+
+#upload-button:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
