@@ -406,36 +406,42 @@ export async function handleUpload(room, renderVideoList, isUploadingState, upda
             }
         }
 
-        // Upload thumbnail first (if we have one)
-        let thumbnailUrl = DEFAULT_THUMBNAIL_URL;
-        if (thumbFile) {
-            fileLabel.textContent = 'Uploading thumbnail...';
-            try {
-                thumbnailUrl = await window.websim.upload(thumbFile);
-            } catch (err) {
-                console.error('Thumbnail upload failed:', err);
-                thumbnailUrl = DEFAULT_THUMBNAIL_URL;
-            }
-        }
-
-        // Upload video
+        // Prefer server multipart upload when available
         try {
-            fileLabel.textContent = 'Uploading video... This may take a while.';
-            const videoUrl = await window.websim.upload(chosenFile);
-
-            // Create record
-            await room.collection(VIDEO_COLLECTION_TYPE).create({
-                title: titleText,
-                description: (descInput.value || '').trim(),
-                videoUrl,
-                thumbnailUrl,
-                views: 0
-            });
-
+            fileLabel.textContent = 'Uploading... This may take a while.';
+            const useServer = window.RoleakAuth && window.RoleakAuth.isServer && window.RoleakAuth.isServer();
+            if (useServer) {
+                const fd = new FormData();
+                fd.append('title', titleText);
+                fd.append('description', (descInput.value || '').trim());
+                fd.append('video', chosenFile, chosenFile.name || 'video.mp4');
+                if (thumbFile) {
+                    fd.append('thumbnail', thumbFile, thumbFile.name || 'thumb.png');
+                }
+                const r = await fetch('/api/videos', { method: 'POST', credentials: 'include', body: fd });
+                const out = await r.json();
+                if (!r.ok) throw new Error(out.error || 'Upload failed');
+            } else {
+                let thumbnailUrl = DEFAULT_THUMBNAIL_URL;
+                if (thumbFile) {
+                    try { thumbnailUrl = await window.websim.upload(thumbFile); }
+                    catch (err) { console.error(err); }
+                }
+                const videoUrl = await window.websim.upload(chosenFile);
+                await room.collection(VIDEO_COLLECTION_TYPE).create({
+                    title: titleText,
+                    description: (descInput.value || '').trim(),
+                    videoUrl,
+                    thumbnailUrl,
+                    views: 0
+                });
+            }
             alert(`Video "${titleText}" uploaded successfully!`);
+            // Force list refresh
+            try { room.collection(VIDEO_COLLECTION_TYPE)._load && room.collection(VIDEO_COLLECTION_TYPE)._load(); } catch(e){}
         } catch (err) {
             console.error('Error uploading video or creating record:', err);
-            alert('Failed to upload video or create record. Please try again.');
+            alert('Failed to upload video: ' + (err.message || 'Please try again.'));
         } finally {
             cleanupAndClose();
         }

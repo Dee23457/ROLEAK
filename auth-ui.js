@@ -133,9 +133,9 @@ async function initAuthUI() {
         if (errEl) errEl.hidden = true;
         try {
             if (currentTab === 'login') {
-                Auth.login(username, password);
+                await Auth.login(username, password);
             } else {
-                Auth.register(username, password);
+                await Auth.register(username, password);
             }
             closeAuthModal();
             location.reload();
@@ -149,14 +149,14 @@ async function initAuthUI() {
 
     // Sidebar login form
     const sideForm = document.getElementById('ll-side-login-form');
-    sideForm?.addEventListener('submit', (e) => {
+    sideForm?.addEventListener('submit', async (e) => {
         e.preventDefault();
         const username = document.getElementById('ll-side-username')?.value;
         const password = document.getElementById('ll-side-password')?.value;
         const errEl = document.getElementById('ll-side-login-error');
         if (errEl) errEl.hidden = true;
         try {
-            Auth.login(username, password);
+            await Auth.login(username, password);
             location.reload();
         } catch (err) {
             if (errEl) {

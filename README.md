@@ -1,40 +1,35 @@
 # ROLEAK
 
-LiveLeak-style video site with a real Python server: shared accounts, videos, and chat.
+LiveLeak-style video site with **real server**, shared accounts, and video storage.
 
-## Run locally
+## Run the server
 
 ```bash
 cd roleak
 python3 server.py
 ```
 
-Open http://127.0.0.1:8765
+Open **http://127.0.0.1:8765**
 
-## Deploy on Render (free)
+### What you get
+- **Accounts** — register / login (SQLite, cookie sessions)
+- **Shared videos** — uploads stored on disk, visible to everyone
+- **Chat** — messages stored on the server
+- **Comments & likes** — per video (API ready)
+- **Admin** — register as `Scratch_Catalouge`
 
-1. Push this repo to GitHub (already: `Dee23457/ROLEAK`).
-2. Go to [https://render.com](https://render.com) → Sign up with GitHub.
-3. **New → Web Service** → select `ROLEAK`.
-4. Settings:
-   - **Runtime:** Python
-   - **Build Command:** `pip install -r requirements.txt`
-   - **Start Command:** `python server.py`
-   - **Instance:** Free
-5. Create Web Service → wait for deploy.
-6. Open the URL Render gives you (e.g. `https://roleak-xxxx.onrender.com`).
+Data lives in `./data/` (`roleak.db`, `uploads/`, `thumbs/`).
 
-### Notes
-- Free tier spins down after idle; first load can take ~30s.
-- Uploaded files on the free disk can be wiped when the service redeploys. Fine for demos; for permanent storage use paid disk or object storage later.
-- Admin username: `Scratch_Catalouge`
-
-## API
-
+### API (for reference)
 | Method | Path | Description |
 |--------|------|-------------|
 | POST | `/api/register` | Create account |
 | POST | `/api/login` | Log in |
+| POST | `/api/logout` | Log out |
+| GET | `/api/me` | Current user |
 | GET | `/api/videos` | List videos |
 | POST | `/api/videos` | Upload (multipart) |
-| GET/POST | `/api/chat` | Chat messages |
+| GET/PUT/DELETE | `/api/videos/:id` | Get / update / delete |
+| GET/POST | `/api/chat` | List / send messages |
+
+Without the server, the site falls back to browser-only (localStorage) mode.
