@@ -363,7 +363,7 @@ async function handleRemoveVideoWrapper(room, video) {
         // Re-check if the currently playing video (if any) is still accessible after the update
          const currentModalVideoElement = document.querySelector('.modal-video-player');
          if (currentModalVideoElement) {
-             const currentVideoUrl = currentModalVideoElement.src;
+             const currentVideoUrl = currentModalVideoElement.dataset.videoUrl || currentModalVideoElement.src;
              const modalVideoData = latestVideos.find(v => v.videoUrl === currentVideoUrl);
 
              if (modalVideoData) {
@@ -392,7 +392,7 @@ async function handleToggleVisibilityWrapper(room, video) {
      if (currentModalVideoElement) {
         // Find the latest state of the video currently playing in the modal
          const latestVideos = room.collection(VIDEO_COLLECTION_TYPE).getList();
-         const currentVideoUrl = currentModalVideoElement.src;
+         const currentVideoUrl = currentModalVideoElement.dataset.videoUrl || currentModalVideoElement.src;
          const modalVideoData = latestVideos.find(v => v.videoUrl === currentVideoUrl);
 
          if (modalVideoData) {
@@ -495,7 +495,7 @@ room.initialize().then(() => {
 
         const currentModalVideoElement = document.querySelector('.modal-video-player');
         if (currentModalVideoElement) {
-             const currentVideoUrl = currentModalVideoElement.src;
+             const currentVideoUrl = currentModalVideoElement.dataset.videoUrl || currentModalVideoElement.src;
              const latestVideos = room.collection(VIDEO_COLLECTION_TYPE).getList();
 
              const isCreator = latestVideos.some(v => v.videoUrl === currentVideoUrl && v.username === currentUserUsername);

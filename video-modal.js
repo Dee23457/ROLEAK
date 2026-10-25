@@ -243,7 +243,7 @@ const videoPageTemplate = (video) => {
                     <!-- Player -->
                     <!-- Enforce a consistent 16:9 player frame constrained to PLAYER_TARGET_WIDTH x PLAYER_TARGET_HEIGHT (scales down on small screens) -->
                     <div class="video-player-container" style="position:relative;width:100%;max-width:${PLAYER_TARGET_WIDTH}px;background:#000;border:1px solid rgba(0,0,0,0.12);border-radius:8px;overflow:hidden;margin:0 auto;aspect-ratio:16/9;">
-                        <video class="video-page-player modal-video-player" controls src="${String(video.videoUrl||'').startsWith('localblob://') ? '' : (video.videoUrl||'')}" data-localblob="${String(video.videoUrl||'').startsWith('localblob://') ? video.videoUrl : ''}" style="width:100%;height:100%;display:block;object-fit:cover;background:#000;"></video>
+                        <video class="video-page-player modal-video-player" controls src="${String(video.videoUrl||'').startsWith('localblob://') ? '' : (video.videoUrl||'')}" data-localblob="${String(video.videoUrl||'').startsWith('localblob://') ? video.videoUrl : ''}" data-video-url="${String(video.videoUrl||'').replace(/"/g,'&quot;')}" style="width:100%;height:100%;display:block;object-fit:cover;background:#000;"></video>
 
                         <div class="modal-hosted-badge" style="position:absolute;top:10px;left:10px;opacity:${badgeOpacity};pointer-events:none;z-index:12;">
                             <img src="${WATERMARK_LOGO_URL}" alt="ROLEAK" style="height:28px;display:block;background:transparent;">
