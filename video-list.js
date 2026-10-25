@@ -17,7 +17,7 @@ export const LIVELEAK_GRID_COLUMNS = 3;
    the badge remains available for use in the full video page (video-modal.js) which reads the same config.
 */
 export const HOSTED_BADGE_CONFIG = {
-    url: '/IMG_3059.png', /* @tweakable hosted badge image URL */
+    url: 'IMG_3059.png', /* @tweakable hosted badge image URL */
     width: 72,            /* @tweakable badge width (px) */
     height: 28,           /* @tweakable badge height (px) */
     left: 8,              /* @tweakable left offset (px) */
