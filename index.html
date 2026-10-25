@@ -5,10 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ROLEAK - Redefining The Media</title>
     <script>
-    // GitHub Pages project sites live under /REPO_NAME/ — keep relative assets working
     (function () {
       var parts = location.pathname.split('/').filter(Boolean);
-      // If path looks like /ROLEAK/... set base
       if (parts.length && !parts[0].includes('.')) {
         var base = '/' + parts[0] + '/';
         if (!document.querySelector('base')) {
@@ -19,7 +17,6 @@
       }
     })();
     </script>
-
     <link rel="stylesheet" href="variables.css">
     <link rel="stylesheet" href="base.css">
     <link rel="stylesheet" href="header.css">
@@ -48,7 +45,6 @@
 </head>
 <body>
 <div class="ll-page-shell">
-
     <div class="ll-header">
         <div class="ll-inner">
         <div class="ll-logo-row">
@@ -109,7 +105,6 @@
 
     <div id="content-wrapper" class="ll-content">
         <div class="ll-main-col">
-            
             <div class="ll-quick-btns">
                 <a href="#">ROLEAK TV</a>
                 <a href="#">Citizen Journalism</a>
@@ -124,7 +119,6 @@
                 <h2>Featured Media Items</h2>
                 <p style="color:#666;font-size:12px;margin:0;">Featured videos will show here after uploads. Register and post to get on this list.</p>
             </div>
-
         </div>
 
         <aside class="ll-sidebar">
@@ -167,38 +161,25 @@
         </aside>
     </div>
 
-    
-    <!-- Extra pages (static SPA) -->
     <div id="page-chat" data-page-panel hidden class="ll-page-panel">
         <h2 class="ll-section-title">Chat</h2>
-        <p>Open the chat panel from the bottom-right when available, or post after logging in. On static hosting, chat is stored in this browser only.</p>
-        <div id="static-chat-box" style="border:1px solid #ccc;padding:12px;min-height:200px;background:#f9f9f9;">
-            <p style="color:#666;">Log in and use the site chat when the chat UI is loaded. Messages stay on this device in static mode.</p>
-        </div>
+        <p>Chat is stored in this browser only on the static site.</p>
     </div>
     <div id="page-sections" data-page-panel hidden class="ll-page-panel">
         <h2 class="ll-section-title">Sections</h2>
-        <ul class="ll-page-list">
-            <li><a href="#home">All / Headlines</a></li>
-            <li><a href="#home">News</a></li>
-            <li><a href="#home">Politics</a></li>
-            <li><a href="#home">Entertainment</a></li>
-            <li><a href="#home">Celebrity</a></li>
-            <li><a href="#home">Education</a></li>
-            <li><a href="#home">Citizen Journalism</a></li>
-        </ul>
+        <p>Browse headlines from the Home tab.</p>
     </div>
     <div id="page-forum" data-page-panel hidden class="ll-page-panel">
         <h2 class="ll-section-title">Forum</h2>
-        <p>Forum boards are a preview on the static site. Use Chat for discussion for now.</p>
+        <p>Forum preview — use Home to post videos.</p>
     </div>
     <div id="page-yoursay" data-page-panel hidden class="ll-page-panel">
         <h2 class="ll-section-title">Your Say</h2>
-        <p>Share opinions after you <a href="#" data-open-auth="register">register</a>. Featured posts will appear on the home sidebar.</p>
+        <p>Register and upload to share your take.</p>
     </div>
     <div id="page-live" data-page-panel hidden class="ll-page-panel">
         <h2 class="ll-section-title">ROLEAK Live</h2>
-        <p>Live streams are not available on static hosting. Upload regular videos from Home instead.</p>
+        <p>Live streams are not available on static hosting.</p>
     </div>
 
     <div id="video-modal-container"></div>
@@ -223,18 +204,19 @@
                 <p id="auth-error" class="auth-error" hidden></p>
                 <button type="submit" id="auth-submit">Login</button>
             </form>
-            <p class="auth-hint">Accounts are stored on this device. Create one to upload, comment, and chat. To be admin, register as <strong>Scratch_Catalouge</strong>.</p>
+            <p class="auth-hint">Static mode: accounts & videos stay in <strong>this browser only</strong>. Admin username: <strong>Scratch_Catalouge</strong>.</p>
             <button type="button" class="auth-close" data-close-auth>Close</button>
         </div>
     </div>
 
     <footer class="ll-footer">
-        <p>&copy; ROLEAK &mdash; local demo with accounts. Not affiliated with LiveLeak.</p>
+        <p>&copy; ROLEAK &mdash; static mode: accounts & videos stay in this browser. Not affiliated with LiveLeak.</p>
     </footer>
 
     <script type="module" src="pages.js"></script>
     <script type="module" src="auth-ui.js"></script>
     <script type="module" src="script.js"></script>
+    <script type="module" src="upload-fix.js"></script>
 </div>
 </body>
 </html>
