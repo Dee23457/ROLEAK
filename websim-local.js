@@ -288,6 +288,13 @@ class LocalCollection {
         await this._ready;
         await checkServer();
         if (useServer && this.type === 'video_v1') {
+            // View counts have their own endpoint (any visitor may bump them; PUT is owner/admin only)
+            const keys = Object.keys(patch || {});
+            if (keys.length === 1 && keys[0] === 'views') {
+                try { await fetch(API + '/videos/' + id + '/view', { method: 'POST', credentials: 'include' }); } catch (_) {}
+                await this._loadServer();
+                return this._list.find(v => v.id === id);
+            }
             const r = await fetch(API + '/videos/' + id, {
                 method: 'PUT', credentials: 'include',
                 headers: { 'Content-Type': 'application/json' },

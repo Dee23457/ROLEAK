@@ -17,27 +17,86 @@ import mimetypes
 import os
 import re
 import secrets
+import shutil
 import sqlite3
+import threading
 import time
+import traceback
 import uuid
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import parse_qs, unquote, urlparse
+from urllib.parse import parse_qs, quote, unquote, urlparse
 
 ROOT = Path(__file__).resolve().parent
-DATA = ROOT / "data"
+# Point ROLEAK_DATA_DIR at a persistent disk/volume in production so the
+# database and uploads survive redeploys.
+DATA = Path(os.environ.get("ROLEAK_DATA_DIR") or (ROOT / "data")).resolve()
 UPLOADS = DATA / "uploads"
 THUMBS = DATA / "thumbs"
 DB_PATH = DATA / "roleak.db"
 
 HOST = os.environ.get("ROLEAK_HOST", "0.0.0.0")
 PORT = int(os.environ.get("PORT") or os.environ.get("ROLEAK_PORT", "8765"))
-ADMIN_USERNAME = "Scratch_Catalouge"
+ADMIN_USERNAME = os.environ.get("ROLEAK_ADMIN_USERNAME", "Scratch_Catalouge")
 SESSION_DAYS = 30
+MAX_UPLOAD_BYTES = int(os.environ.get("ROLEAK_MAX_UPLOAD_MB", "200")) * 1024 * 1024
+MAX_JSON_BYTES = 1024 * 1024
 
-DATA.mkdir(exist_ok=True)
+VIDEO_TYPES = {".mp4": "video/mp4", ".webm": "video/webm", ".mov": "video/quicktime"}
+THUMB_TYPES = {".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".gif": "image/gif"}
+CT_TO_VIDEO_EXT = {v: k for k, v in VIDEO_TYPES.items()}
+CT_TO_THUMB_EXT = {"image/png": ".png", "image/jpeg": ".jpg", "image/gif": ".gif"}
+
+# Only these file types are ever served as static site files.
+STATIC_TYPES = {
+    ".html": "text/html; charset=utf-8", ".css": "text/css; charset=utf-8",
+    ".js": "text/javascript; charset=utf-8", ".png": "image/png", ".jpg": "image/jpeg",
+    ".jpeg": "image/jpeg", ".gif": "image/gif", ".webp": "image/webp", ".ico": "image/x-icon",
+    ".svg": "image/svg+xml", ".woff": "font/woff", ".woff2": "font/woff2",
+}
+
+USERNAME_RE = re.compile(r"^[A-Za-z0-9_.\-]{2,32}$")
+
+DATA.mkdir(parents=True, exist_ok=True)
 UPLOADS.mkdir(exist_ok=True)
 THUMBS.mkdir(exist_ok=True)
+
+
+def is_admin_name(name: str | None) -> bool:
+    return bool(name) and name.lower() == ADMIN_USERNAME.lower()
+
+
+def data_path(rel: str | None) -> Path | None:
+    """Resolve a stored relative path inside DATA (never outside it)."""
+    if not rel:
+        return None
+    if rel.startswith("data/"):  # legacy rows
+        rel = rel[5:]
+    fp = (DATA / rel).resolve()
+    if fp != DATA and DATA not in fp.parents:
+        return None
+    return fp
+
+
+_rate_lock = threading.Lock()
+_rate_hits: dict[str, list[float]] = {}
+_view_seen: dict[tuple[str, str], float] = {}
+
+
+def rate_limited(key: str, limit: int, window: float) -> bool:
+    """True if `key` already made `limit` hits within `window` seconds (and records this hit otherwise)."""
+    t = time.time()
+    with _rate_lock:
+        hits = [h for h in _rate_hits.get(key, []) if t - h < window]
+        if len(hits) >= limit:
+            _rate_hits[key] = hits
+            return True
+        hits.append(t)
+        _rate_hits[key] = hits
+        if len(_rate_hits) > 5000:  # keep memory bounded
+            for k in [k for k, v in _rate_hits.items() if not v or t - v[-1] > 3600]:
+                _rate_hits.pop(k, None)
+    return False
 
 
 # ───────────────────────────── database ─────────────────────────────
@@ -170,7 +229,12 @@ class RoleakHandler(BaseHTTPRequestHandler):
     # ---- low-level IO ----
 
     def _read_body(self) -> bytes:
-        length = int(self.headers.get("Content-Length") or 0)
+        try:
+            length = int(self.headers.get("Content-Length") or 0)
+        except ValueError:
+            length = 0
+        if length > MAX_JSON_BYTES:
+            return b""
         return self.rfile.read(length) if length else b""
 
     def _json_body(self) -> dict:
@@ -187,6 +251,7 @@ class RoleakHandler(BaseHTTPRequestHandler):
         self.send_header("Content-Type", content_type)
         self.send_header("Content-Length", str(len(body)))
         self.send_header("Cache-Control", "no-store")
+        self.send_header("X-Content-Type-Options", "nosniff")
         if extra_headers:
             for k, v in extra_headers.items():
                 self.send_header(k, v)
@@ -199,6 +264,16 @@ class RoleakHandler(BaseHTTPRequestHandler):
 
     def _error(self, code: int, message: str):
         self._json(code, {"error": message})
+
+    def _client_ip(self) -> str:
+        # Behind a proxy (Render etc.) the rightmost X-Forwarded-For entry is the one the proxy added.
+        fwd = self.headers.get("X-Forwarded-For")
+        if fwd:
+            return fwd.split(",")[-1].strip()
+        return self.client_address[0]
+
+    def _is_https(self) -> bool:
+        return (self.headers.get("X-Forwarded-Proto") or "").lower() == "https"
 
     def _cookie_token(self) -> str | None:
         cookie = self.headers.get("Cookie") or ""
@@ -234,23 +309,22 @@ class RoleakHandler(BaseHTTPRequestHandler):
         return user
 
     def _set_session_cookie(self, token: str, max_age: int):
+        secure = "; Secure" if self._is_https() else ""
         return {
             "Set-Cookie": (
-                f"roleak_session={token}; Path=/; HttpOnly; SameSite=Lax; Max-Age={max_age}"
+                f"roleak_session={token}; Path=/; HttpOnly; SameSite=Lax; Max-Age={max_age}{secure}"
             )
         }
 
     def _clear_session_cookie(self):
-        return {"Set-Cookie": "roleak_session=; Path=/; Max-Age=0"}
+        return {"Set-Cookie": "roleak_session=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0"}
 
     # ---- routing ----
 
     def do_OPTIONS(self):
+        # Site and API are same-origin, so no CORS headers are sent.
         self.send_response(204)
-        self.send_header("Access-Control-Allow-Origin", self.headers.get("Origin") or "*")
-        self.send_header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-        self.send_header("Access-Control-Allow-Headers", "Content-Type, Authorization")
-        self.send_header("Access-Control-Allow-Credentials", "true")
+        self.send_header("Allow", "GET, POST, PUT, DELETE, OPTIONS")
         self.end_headers()
 
     def do_GET(self):
@@ -277,9 +351,9 @@ class RoleakHandler(BaseHTTPRequestHandler):
         if path.startswith("/api/"):
             try:
                 self._api(method, path, qs)
-            except Exception as e:
-                print("API error:", e)
-                self._error(500, str(e))
+            except Exception:
+                traceback.print_exc()
+                self._error(500, "Server error")
             return
 
         # Media
@@ -296,41 +370,31 @@ class RoleakHandler(BaseHTTPRequestHandler):
     def _serve_static(self, path: str):
         if path in ("", "/"):
             path = "/index.html"
-        # Simple multi-page routes
-        page_map = {
-            "/watch": "/index.html",
-            "/login": "/index.html",
-            "/register": "/index.html",
-            "/upload": "/index.html",
-            "/chat": "/index.html",
-        }
-        if path in page_map:
-            path = page_map[path]
-        if path.startswith("/watch/"):
+        # Client-side routes all load the single-page app
+        if path in ("/watch", "/login", "/register", "/upload", "/chat") or path.startswith("/watch/"):
             path = "/index.html"
 
-        # Prevent path traversal
         rel = path.lstrip("/")
-        if ".." in rel or rel.startswith("/"):
-            return self._error(400, "Bad path")
+        parts = rel.split("/")
+        if ".." in parts or any(p.startswith(".") for p in parts) or "\\" in rel:
+            return self._error(404, "Not found")
 
-        file_path = (ROOT / rel).resolve()
-        if not str(file_path).startswith(str(ROOT)) or not file_path.is_file():
-            # SPA fallback
-            file_path = ROOT / "index.html"
-            if not file_path.is_file():
+        suffix = Path(rel).suffix.lower()
+        if not suffix:
+            file_path = ROOT / "index.html"  # SPA fallback for extensionless routes
+            suffix = ".html"
+        else:
+            file_path = (ROOT / rel).resolve()
+            # Never serve anything from the data dir, the server code, the DB, etc.
+            if (
+                ROOT not in file_path.parents
+                or DATA == file_path or DATA in file_path.parents
+                or suffix not in STATIC_TYPES
+                or not file_path.is_file()
+            ):
                 return self._error(404, "Not found")
 
-        ctype = mimetypes.guess_type(str(file_path))[0] or "application/octet-stream"
-        if file_path.suffix == ".js":
-            ctype = "text/javascript; charset=utf-8"
-        elif file_path.suffix == ".css":
-            ctype = "text/css; charset=utf-8"
-        elif file_path.suffix == ".html":
-            ctype = "text/html; charset=utf-8"
-
-        data = file_path.read_bytes()
-        self._send(200, data, ctype)
+        self._send(200, file_path.read_bytes(), STATIC_TYPES.get(suffix, "application/octet-stream"))
 
     def _serve_media(self, path: str, folder: Path, kind: str):
         # /media/videos/<id> or /media/thumbs/<id>
@@ -339,23 +403,76 @@ class RoleakHandler(BaseHTTPRequestHandler):
             return self._error(404, "Not found")
         vid = parts[2]
         with db() as conn:
-            row = conn.execute("SELECT video_path, thumb_path FROM videos WHERE id = ?", (vid,)).fetchone()
+            row = conn.execute(
+                "SELECT username, is_hidden, video_path, thumb_path FROM videos WHERE id = ?", (vid,)
+            ).fetchone()
         if not row:
             return self._error(404, "Not found")
+        if row["is_hidden"]:
+            user = self._current_user()
+            if not user or not (user["username"] == row["username"] or is_admin_name(user["username"])):
+                return self._error(404, "Not found")
         rel = row["video_path"] if kind == "videos" else row["thumb_path"]
         if not rel:
             if kind == "thumbs":
                 fp = ROOT / "DefaultThumbnail.png"
                 if fp.is_file():
-                    data = fp.read_bytes()
-                    return self._send(200, data, "image/png")
+                    return self._send(200, fp.read_bytes(), "image/png")
             return self._error(404, "Not found")
-        fp = ROOT / rel
-        if not fp.is_file():
+        fp = data_path(rel)
+        if not fp or not fp.is_file():
             return self._error(404, "File missing")
-        ctype = mimetypes.guess_type(str(fp))[0] or "application/octet-stream"
-        data = fp.read_bytes()
-        self._send(200, data, ctype, {"Accept-Ranges": "bytes"})
+        table = VIDEO_TYPES if kind == "videos" else THUMB_TYPES
+        ctype = table.get(fp.suffix.lower())
+        if not ctype:
+            return self._error(404, "Not found")
+        self._send_file_ranged(fp, ctype)
+
+    def _send_file_ranged(self, fp: Path, ctype: str):
+        """Stream a file with HTTP Range support (needed for seeking / Safari / iOS)."""
+        size = fp.stat().st_size
+        start, end, status = 0, size - 1, 200
+        rng = self.headers.get("Range")
+        if rng:
+            m = re.match(r"^bytes=(\d*)-(\d*)$", rng.strip())
+            if m and (m.group(1) or m.group(2)):
+                if m.group(1):
+                    start = int(m.group(1))
+                    if m.group(2):
+                        end = min(int(m.group(2)), size - 1)
+                else:  # suffix range: last N bytes
+                    start = max(size - int(m.group(2)), 0)
+                if start > end or start >= size:
+                    self.send_response(416)
+                    self.send_header("Content-Range", f"bytes */{size}")
+                    self.send_header("Content-Length", "0")
+                    self.end_headers()
+                    return
+                status = 206
+        length = end - start + 1
+        self.send_response(status)
+        self.send_header("Content-Type", ctype)
+        self.send_header("Content-Length", str(length))
+        self.send_header("Accept-Ranges", "bytes")
+        self.send_header("Cache-Control", "private, max-age=3600")
+        self.send_header("X-Content-Type-Options", "nosniff")
+        if status == 206:
+            self.send_header("Content-Range", f"bytes {start}-{end}/{size}")
+        self.end_headers()
+        if self.command == "HEAD":
+            return
+        try:
+            with open(fp, "rb") as f:
+                f.seek(start)
+                remaining = length
+                while remaining > 0:
+                    chunk = f.read(min(256 * 1024, remaining))
+                    if not chunk:
+                        break
+                    self.wfile.write(chunk)
+                    remaining -= len(chunk)
+        except (BrokenPipeError, ConnectionResetError):
+            pass  # client closed the connection (normal when seeking)
 
     # ---- API ----
 
@@ -415,11 +532,15 @@ class RoleakHandler(BaseHTTPRequestHandler):
         body = self._json_body()
         username = (body.get("username") or "").strip()
         password = body.get("password") or ""
-        if len(username) < 2:
-            return self._error(400, "Username must be at least 2 characters")
-        if len(password) < 3:
-            return self._error(400, "Password must be at least 3 characters")
-        avatar = f"https://api.dicebear.com/7.x/identicon/svg?seed={username}"
+        if rate_limited("reg:" + self._client_ip(), 5, 3600):
+            return self._error(429, "Too many sign-ups from this address. Try again later.")
+        if not USERNAME_RE.match(username):
+            return self._error(400, "Username must be 2-32 characters: letters, numbers, _ . -")
+        if len(password) < 6:
+            return self._error(400, "Password must be at least 6 characters")
+        if len(password) > 128:
+            return self._error(400, "Password too long")
+        avatar = f"https://api.dicebear.com/7.x/identicon/svg?seed={quote(username)}"
         try:
             with db() as conn:
                 cur = conn.execute(
@@ -436,7 +557,7 @@ class RoleakHandler(BaseHTTPRequestHandler):
             return self._error(409, "Username already taken")
         return self._json(
             201,
-            {"username": username, "avatarUrl": avatar, "token": token, "isAdmin": username == ADMIN_USERNAME},
+            {"username": username, "avatarUrl": avatar, "token": token, "isAdmin": is_admin_name(username)},
             self._set_session_cookie(token, SESSION_DAYS * 86400),
         )
 
@@ -444,7 +565,12 @@ class RoleakHandler(BaseHTTPRequestHandler):
         body = self._json_body()
         username = (body.get("username") or "").strip()
         password = body.get("password") or ""
+        if rate_limited("login:" + self._client_ip(), 10, 300):
+            return self._error(429, "Too many login attempts. Wait a few minutes and try again.")
+        if len(password) > 128:
+            return self._error(401, "Invalid username or password")
         with db() as conn:
+            conn.execute("DELETE FROM sessions WHERE expires_at < ?", (now(),))
             row = conn.execute(
                 "SELECT id, username, password_hash, avatar_url FROM users WHERE username = ? COLLATE NOCASE",
                 (username,),
@@ -462,7 +588,7 @@ class RoleakHandler(BaseHTTPRequestHandler):
                 "username": row["username"],
                 "avatarUrl": row["avatar_url"],
                 "token": token,
-                "isAdmin": row["username"] == ADMIN_USERNAME,
+                "isAdmin": is_admin_name(row["username"]),
             },
             self._set_session_cookie(token, SESSION_DAYS * 86400),
         )
@@ -484,7 +610,7 @@ class RoleakHandler(BaseHTTPRequestHandler):
                 "user": {
                     "username": user["username"],
                     "avatarUrl": user["avatar_url"],
-                    "isAdmin": user["username"] == ADMIN_USERNAME,
+                    "isAdmin": is_admin_name(user["username"]),
                 }
             },
         )
@@ -502,7 +628,7 @@ class RoleakHandler(BaseHTTPRequestHandler):
         for r in rows:
             hidden = bool(r["is_hidden"])
             is_owner = user and user["username"] == r["username"]
-            is_admin = user and user["username"] == ADMIN_USERNAME
+            is_admin = user and is_admin_name(user["username"])
             if hidden and not is_owner and not is_admin:
                 continue
             item = video_public(r)
@@ -516,10 +642,29 @@ class RoleakHandler(BaseHTTPRequestHandler):
             row = conn.execute("SELECT * FROM videos WHERE id = ?", (vid,)).fetchone()
         if not row:
             return self._error(404, "Video not found")
+        if row["is_hidden"]:
+            user = self._current_user()
+            if not user or not (user["username"] == row["username"] or is_admin_name(user["username"])):
+                return self._error(404, "Video not found")
         return self._json(200, {"video": video_public(row)})
 
     def _api_view_video(self, vid: str):
+        key = (self._client_ip(), vid)
+        t = now()
+        with _rate_lock:
+            seen = _view_seen.get(key)
+            counted = seen is not None and t - seen < 3600
+            if not counted:
+                _view_seen[key] = t
+                if len(_view_seen) > 20000:
+                    for k in [k for k, v in _view_seen.items() if t - v > 3600]:
+                        _view_seen.pop(k, None)
         with db() as conn:
+            if counted:
+                row = conn.execute("SELECT * FROM videos WHERE id = ?", (vid,)).fetchone()
+                if not row:
+                    return self._error(404, "Video not found")
+                return self._json(200, {"video": video_public(row)})
             conn.execute("UPDATE videos SET views = views + 1 WHERE id = ?", (vid,))
             row = conn.execute("SELECT * FROM videos WHERE id = ?", (vid,)).fetchone()
         if not row:
@@ -534,6 +679,16 @@ class RoleakHandler(BaseHTTPRequestHandler):
         content_type = self.headers.get("Content-Type", "")
         if "multipart/form-data" not in content_type:
             return self._error(400, "Expected multipart/form-data")
+        try:
+            declared = int(self.headers.get("Content-Length") or 0)
+        except ValueError:
+            declared = 0
+        if declared > MAX_UPLOAD_BYTES + 5 * 1024 * 1024:
+            self.close_connection = True
+            return self._error(413, f"File too large (max {MAX_UPLOAD_BYTES // (1024 * 1024)} MB)")
+        if rate_limited("upload:" + user["username"].lower(), 20, 3600):
+            self.close_connection = True
+            return self._error(429, "Upload limit reached. Try again later.")
 
         form = cgi.FieldStorage(
             fp=self.rfile,
@@ -541,30 +696,47 @@ class RoleakHandler(BaseHTTPRequestHandler):
             environ={
                 "REQUEST_METHOD": "POST",
                 "CONTENT_TYPE": content_type,
+                "CONTENT_LENGTH": str(declared),
             },
         )
 
-        title = (form.getvalue("title") or "").strip() or "Untitled"
-        description = (form.getvalue("description") or "").strip()
+        title = (form.getvalue("title") or "").strip()[:200] or "Untitled"
+        description = (form.getvalue("description") or "").strip()[:5000]
         video_item = form["video"] if "video" in form else None
         thumb_item = form["thumbnail"] if "thumbnail" in form else None
 
         if video_item is None or not getattr(video_item, "file", None):
             return self._error(400, "Video file required")
 
-        vid = new_id("v_")
         video_name = safe_filename(getattr(video_item, "filename", None) or "video.mp4")
-        video_rel = f"data/uploads/{vid}_{video_name}"
-        video_abs = ROOT / video_rel
+        ext = Path(video_name).suffix.lower()
+        if ext not in VIDEO_TYPES:
+            ext = CT_TO_VIDEO_EXT.get((getattr(video_item, "type", "") or "").split(";")[0].strip().lower(), "")
+        if ext not in VIDEO_TYPES:
+            return self._error(400, "Unsupported video type (use mp4, webm or mov)")
+
+        vid = new_id("v_")
+        video_rel = f"uploads/{vid}{ext}"
+        video_abs = DATA / video_rel
         with open(video_abs, "wb") as f:
-            f.write(video_item.file.read())
+            shutil.copyfileobj(video_item.file, f, 1024 * 1024)
+        if video_abs.stat().st_size > MAX_UPLOAD_BYTES:
+            video_abs.unlink(missing_ok=True)
+            return self._error(413, f"File too large (max {MAX_UPLOAD_BYTES // (1024 * 1024)} MB)")
 
         thumb_rel = None
         if thumb_item is not None and getattr(thumb_item, "file", None):
-            thumb_name = safe_filename(getattr(thumb_item, "filename", None) or "thumb.png")
-            thumb_rel = f"data/thumbs/{vid}_{thumb_name}"
-            with open(ROOT / thumb_rel, "wb") as f:
-                f.write(thumb_item.file.read())
+            t_name = safe_filename(getattr(thumb_item, "filename", None) or "thumb.png")
+            t_ext = Path(t_name).suffix.lower()
+            if t_ext not in THUMB_TYPES:
+                t_ext = CT_TO_THUMB_EXT.get((getattr(thumb_item, "type", "") or "").split(";")[0].strip().lower(), "")
+            if t_ext in THUMB_TYPES:
+                thumb_rel = f"thumbs/{vid}{t_ext}"
+                with open(DATA / thumb_rel, "wb") as f:
+                    shutil.copyfileobj(thumb_item.file, f, 1024 * 1024)
+                if (DATA / thumb_rel).stat().st_size > 5 * 1024 * 1024:
+                    (DATA / thumb_rel).unlink(missing_ok=True)
+                    thumb_rel = None
 
         with db() as conn:
             conn.execute(
@@ -588,10 +760,10 @@ class RoleakHandler(BaseHTTPRequestHandler):
             row = conn.execute("SELECT * FROM videos WHERE id = ?", (vid,)).fetchone()
             if not row:
                 return self._error(404, "Video not found")
-            if row["username"] != user["username"] and user["username"] != ADMIN_USERNAME:
+            if row["username"] != user["username"] and not is_admin_name(user["username"]):
                 return self._error(403, "Not allowed")
-            title = body.get("title", row["title"])
-            description = body.get("description", row["description"])
+            title = str(body.get("title", row["title"]))[:200]
+            description = str(body.get("description", row["description"]))[:5000]
             is_hidden = row["is_hidden"]
             if "isHidden" in body:
                 is_hidden = 1 if body["isHidden"] else 0
@@ -610,12 +782,13 @@ class RoleakHandler(BaseHTTPRequestHandler):
             row = conn.execute("SELECT * FROM videos WHERE id = ?", (vid,)).fetchone()
             if not row:
                 return self._error(404, "Video not found")
-            if row["username"] != user["username"] and user["username"] != ADMIN_USERNAME:
+            if row["username"] != user["username"] and not is_admin_name(user["username"]):
                 return self._error(403, "Not allowed")
             for rel in (row["video_path"], row["thumb_path"]):
-                if rel:
+                fp = data_path(rel)
+                if fp:
                     try:
-                        (ROOT / rel).unlink(missing_ok=True)
+                        fp.unlink(missing_ok=True)
                     except Exception:
                         pass
             conn.execute("DELETE FROM videos WHERE id = ?", (vid,))
@@ -726,6 +899,8 @@ class RoleakHandler(BaseHTTPRequestHandler):
             return self._error(400, "Empty message")
         if len(text) > 500:
             return self._error(400, "Message too long")
+        if rate_limited("chat:" + user["username"].lower(), 20, 60):
+            return self._error(429, "Slow down a little.")
         mid = new_id("m_")
         with db() as conn:
             conn.execute(
@@ -748,7 +923,7 @@ class RoleakHandler(BaseHTTPRequestHandler):
         user = self._require_user()
         if not user:
             return
-        if user["username"] != ADMIN_USERNAME:
+        if not is_admin_name(user["username"]):
             return self._error(403, "Admin only")
         with db() as conn:
             conn.execute("DELETE FROM messages WHERE id = ?", (mid,))

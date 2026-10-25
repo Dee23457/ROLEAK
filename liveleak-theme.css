@@ -567,3 +567,12 @@ body > header:not(.ll-header) { display: none !important; }
     border-radius: 2px;
     font-size: 11px;
 }
+
+/* Let JS hide the main home layout (video page, other tabs).
+   The rule above uses display:flex !important, which otherwise beats both
+   the inline display:none and the [hidden] attribute. */
+#content-wrapper[hidden],
+#content-wrapper[style*="display: none"],
+[data-page-panel][hidden] {
+    display: none !important;
+}
