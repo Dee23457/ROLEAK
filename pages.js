@@ -46,6 +46,7 @@ function initPages() {
             showPage(tab.getAttribute('data-page'));
         });
     });
+    // Hash routing
     const hash = (location.hash || '#home').replace('#', '');
     showPage(PAGES[hash] ? hash : 'home');
     window.addEventListener('hashchange', () => {

@@ -1,10 +1,11 @@
 /**
- * ROLEAK client — server API when available, IndexedDB fallback otherwise.
- * Exposes WebsimSocket-compatible API for existing modules.
+ * ROLEAK client — local IndexedDB mode (GitHub Pages) + optional server API.
  */
 const API = '/api';
 const SESSION_KEY = 'roleak_session_user';
 const USERS_KEY = 'roleak_users';
+const DB_NAME = 'roleak_local_db';
+const DB_VERSION = 1;
 
 let useServer = false;
 let serverChecked = false;
@@ -16,7 +17,7 @@ async function checkServer() {
         const r = await fetch(API + '/health', { credentials: 'include' });
         useServer = r.ok;
     } catch { useServer = false; }
-    console.log(useServer ? '[ROLEAK] Using server backend' : '[ROLEAK] Local mode (no server)');
+    console.log(useServer ? '[ROLEAK] Server backend' : '[ROLEAK] Static/local mode');
     return useServer;
 }
 
@@ -35,6 +36,118 @@ function getSessionUser() {
 function setSessionUser(user) {
     if (user) localStorage.setItem(SESSION_KEY, JSON.stringify(user));
     else localStorage.removeItem(SESSION_KEY);
+}
+function uid() { return 'id_' + Math.random().toString(36).slice(2) + Date.now().toString(36); }
+
+function openDB() {
+    return new Promise((resolve, reject) => {
+        const req = indexedDB.open(DB_NAME, DB_VERSION);
+        req.onupgradeneeded = (e) => {
+            const db = e.target.result;
+            if (!db.objectStoreNames.contains('collections')) {
+                const store = db.createObjectStore('collections', { keyPath: 'id' });
+                store.createIndex('type', 'type', { unique: false });
+            }
+            if (!db.objectStoreNames.contains('blobs')) {
+                db.createObjectStore('blobs', { keyPath: 'id' });
+            }
+        };
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+    });
+}
+
+async function idbGetAllByType(type) {
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+        const req = db.transaction('collections', 'readonly').objectStore('collections').index('type').getAll(type);
+        req.onsuccess = () => resolve(req.result || []);
+        req.onerror = () => reject(req.error);
+    });
+}
+async function idbPut(record) {
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+        const tx = db.transaction('collections', 'readwrite');
+        tx.objectStore('collections').put(record);
+        tx.oncomplete = () => resolve(record);
+        tx.onerror = () => reject(tx.error);
+    });
+}
+async function idbDelete(id) {
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+        const tx = db.transaction('collections', 'readwrite');
+        tx.objectStore('collections').delete(id);
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+    });
+}
+async function idbPutBlob(id, blob) {
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+        const tx = db.transaction('blobs', 'readwrite');
+        tx.objectStore('blobs').put({ id, blob, type: blob.type || 'application/octet-stream' });
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+    });
+}
+async function idbGetBlob(id) {
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+        const req = db.transaction('blobs', 'readonly').objectStore('blobs').get(id);
+        req.onsuccess = () => resolve(req.result ? req.result.blob : null);
+        req.onerror = () => reject(req.error);
+    });
+}
+
+const blobUrlCache = new Map();
+
+export async function resolveMediaUrl(url) {
+    if (!url || typeof url !== 'string') return url;
+    if (!url.startsWith('localblob://')) return url;
+    const id = url.slice('localblob://'.length);
+    if (blobUrlCache.has(id)) return blobUrlCache.get(id);
+    try {
+        const blob = await idbGetBlob(id);
+        if (!blob) return url;
+        const objectUrl = URL.createObjectURL(blob);
+        blobUrlCache.set(id, objectUrl);
+        return objectUrl;
+    } catch (e) {
+        console.warn('resolveMediaUrl', e);
+        return url;
+    }
+}
+
+async function resolveDomMedia() {
+    const nodes = document.querySelectorAll(
+        'img[src^="localblob://"], video[src^="localblob://"], source[src^="localblob://"], img[data-localblob], video[data-localblob]'
+    );
+    for (const el of nodes) {
+        const raw = el.getAttribute('data-localblob') || el.getAttribute('src');
+        if (!raw || !raw.startsWith('localblob://')) continue;
+        try {
+            const resolved = await resolveMediaUrl(raw);
+            if (resolved && resolved !== raw) {
+                el.src = resolved;
+                el.removeAttribute('data-localblob');
+            }
+        } catch (e) { console.warn(e); }
+    }
+}
+
+if (typeof MutationObserver !== 'undefined') {
+    const obs = new MutationObserver(() => resolveDomMedia());
+    const start = () => {
+        if (document.documentElement) {
+            obs.observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['src', 'data-localblob'] });
+            resolveDomMedia();
+        }
+    };
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
+    else start();
+    setInterval(resolveDomMedia, 800);
 }
 
 export async function registerUser(username, password) {
@@ -99,61 +212,6 @@ export async function logoutUser() {
 }
 
 export function getCurrentUser() { return getSessionUser(); }
-export async function resolveMediaUrl(url) { return url; }
-
-const DB_NAME = 'roleak_local_db';
-const DB_VERSION = 1;
-function openDB() {
-    return new Promise((resolve, reject) => {
-        const req = indexedDB.open(DB_NAME, DB_VERSION);
-        req.onupgradeneeded = (e) => {
-            const db = e.target.result;
-            if (!db.objectStoreNames.contains('collections')) {
-                const store = db.createObjectStore('collections', { keyPath: 'id' });
-                store.createIndex('type', 'type', { unique: false });
-            }
-            if (!db.objectStoreNames.contains('blobs')) db.createObjectStore('blobs', { keyPath: 'id' });
-        };
-        req.onsuccess = () => resolve(req.result);
-        req.onerror = () => reject(req.error);
-    });
-}
-async function idbGetAllByType(type) {
-    const db = await openDB();
-    return new Promise((resolve, reject) => {
-        const req = db.transaction('collections', 'readonly').objectStore('collections').index('type').getAll(type);
-        req.onsuccess = () => resolve(req.result || []);
-        req.onerror = () => reject(req.error);
-    });
-}
-async function idbPut(record) {
-    const db = await openDB();
-    return new Promise((resolve, reject) => {
-        const tx = db.transaction('collections', 'readwrite');
-        tx.objectStore('collections').put(record);
-        tx.oncomplete = () => resolve(record);
-        tx.onerror = () => reject(tx.error);
-    });
-}
-async function idbDelete(id) {
-    const db = await openDB();
-    return new Promise((resolve, reject) => {
-        const tx = db.transaction('collections', 'readwrite');
-        tx.objectStore('collections').delete(id);
-        tx.oncomplete = () => resolve();
-        tx.onerror = () => reject(tx.error);
-    });
-}
-async function idbPutBlob(id, blob) {
-    const db = await openDB();
-    return new Promise((resolve, reject) => {
-        const tx = db.transaction('blobs', 'readwrite');
-        tx.objectStore('blobs').put({ id, blob, type: blob.type || 'application/octet-stream' });
-        tx.oncomplete = () => resolve();
-        tx.onerror = () => reject(tx.error);
-    });
-}
-function uid() { return 'id_' + Math.random().toString(36).slice(2) + Date.now().toString(36); }
 
 class LocalCollection {
     constructor(type, room) {
@@ -319,18 +377,19 @@ class WebsimSocket {
     }
 }
 
-async function serverUpload(file) {
+async function localUpload(file) {
+    if (!file) throw new Error('No file');
     await checkServer();
-    if (!useServer) {
-        const id = 'blob_' + uid();
-        await idbPutBlob(id, file);
-        return `localblob://${id}`;
-    }
-    return URL.createObjectURL(file);
+    if (useServer) return URL.createObjectURL(file);
+    const id = 'blob_' + uid();
+    await idbPutBlob(id, file);
+    const objectUrl = URL.createObjectURL(file);
+    blobUrlCache.set(id, objectUrl);
+    return `localblob://${id}`;
 }
 
 window.WebsimSocket = WebsimSocket;
-window.websim = { upload: serverUpload };
+window.websim = { upload: localUpload };
 window.RoleakAuth = {
     register: registerUser,
     login: loginUser,
@@ -340,4 +399,4 @@ window.RoleakAuth = {
     checkServer,
     isServer: () => useServer,
 };
-console.log('[ROLEAK] Client layer loaded (server + local fallback).');
+console.log('[ROLEAK] Client ready (static + optional server).');

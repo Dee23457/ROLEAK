@@ -573,3 +573,18 @@ body > header:not(.ll-header) { display: none !important; }
     color: var(--ll-link-hover);
     text-decoration: none;
 }
+
+/* SPA page panels */
+.ll-page-panel {
+    max-width: none;
+    margin: 0;
+    padding: 16px;
+    background: #fff;
+}
+.ll-page-panel[hidden] { display: none !important; }
+.ll-page-list {
+    margin: 8px 0;
+    padding-left: 18px;
+    line-height: 1.8;
+}
+.ll-page-list a { font-weight: 700; }

@@ -31,7 +31,7 @@ THUMBS = DATA / "thumbs"
 DB_PATH = DATA / "roleak.db"
 
 HOST = os.environ.get("ROLEAK_HOST", "0.0.0.0")
-PORT = int(os.environ.get("ROLEAK_PORT", "8765"))
+PORT = int(os.environ.get("PORT") or os.environ.get("ROLEAK_PORT", "8765"))
 ADMIN_USERNAME = "Scratch_Catalouge"
 SESSION_DAYS = 30
 
